@@ -50,11 +50,11 @@ model Course {
 model Lesson {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
-  courseId  String
+  courseId  String?
   content   String
 
   studentLessons StudentLesson[]
-  course         Course          @relation(fields: [courseId], references: [id])
+  course         Course?         @relation(fields: [courseId], references: [id])
 }
 
 model StudentCourse {
