@@ -1,21 +1,28 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from "@nestjs/common";
+import { CanActivate, ExecutionContext, ForbiddenException, Injectable, UnauthorizedException, UseGuards } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import { GqlExecutionContext } from "@nestjs/graphql";
 import { JwtService } from "@nestjs/jwt"
 import { Request } from "express";
+import { JwtMiddleware } from "src/middleware/jwt";
+import { GqlContext } from "src/types/gql-context";
+import { UserRoleEnum } from "src/types/user-role";
 
 @Injectable()
 export class AuthGuard implements CanActivate {
     constructor(
-        private jwtService: JwtService,
-        private configService: ConfigService
+        private readonly jwtService: JwtService,
+        private readonly configService: ConfigService,
+        private readonly jwtMiddleware: JwtMiddleware,
+        private allowedRoles?: Array<keyof typeof UserRoleEnum>
     ) { }
 
     async canActivate(
         context: ExecutionContext
     ): Promise<boolean> {
-        const request = context.switchToHttp().getRequest();
+        const ctx = GqlExecutionContext.create(context).getContext<GqlContext>();
+        const request = ctx.req;
         const token = this.#extractTokenFromHeader(request);
-
+        
         if (!token) {
             throw new UnauthorizedException();
         }
@@ -27,8 +34,11 @@ export class AuthGuard implements CanActivate {
                     secret: this.configService.get<string>('JWT_SECRET')
                 }
             );
-
-            request["user"] = payload;
+            
+            if (this.allowedRoles && !this.allowedRoles.includes(payload.role))
+                throw new ForbiddenException();
+            
+            ctx.user = await this.jwtMiddleware.extractUserFromHeaders(request.headers);
         } catch (error) {
             throw new UnauthorizedException();
         }
@@ -38,6 +48,23 @@ export class AuthGuard implements CanActivate {
 
     #extractTokenFromHeader(request: Request): string | undefined {
         const [type, token] = request.headers.authorization?.split(' ') ?? [];
-        return type === "Bearer" ? token : undefined;
+        return type === "bearer" ? token : undefined;
     }
+
+}
+
+export function UseAuthGuard(
+    allowedRoles?: Array<keyof typeof UserRoleEnum>
+) {
+    return UseGuards(
+        new AuthGuard(
+            new JwtService(), 
+            new ConfigService(), 
+            new JwtMiddleware(
+                new JwtService(), 
+                new ConfigService()
+            ), 
+            allowedRoles
+        )
+    );
 }
