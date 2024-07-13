@@ -9,6 +9,9 @@ import { GqlContext } from "src/types/gql-context";
 import { UpdateCourseInput } from "../input/course/edit-course.input";
 import { UpdateCourseResponse } from "../response/course/update-course-response";
 import { RequiredIdError } from "src/errors/required-id.error";
+import { DeleteCourseInput } from "../input/course/delete-course.input";
+import { DeleteCourseResponse } from "../response/course/delete-course-response";
+import { CannotDeleteError } from "src/errors/cannot-delete.error";
 
 @Resolver()
 export class CourseResolver {
@@ -60,7 +63,7 @@ export class CourseResolver {
     ): Promise<UpdateCourseResponse> {
         try {
             if(!input.id) throw new RequiredIdError();
-            
+
             const updatedCourse = await prisma.course.update({
                 where: {
                     id: input.id
@@ -83,6 +86,38 @@ export class CourseResolver {
                 }
             }
             throw error;
+        }
+    }
+
+    @UseAuthGuard(["teacher"])
+    @Mutation(() => DeleteCourseResponse, { nullable: false })
+    async deleteCourse(
+        @Args("input", { type: () => DeleteCourseInput })
+        input: DeleteCourseInput
+    ): Promise<DeleteCourseResponse> {
+        try {
+            if(!input.id) throw new RequiredIdError();
+
+            const deletedCourse = await prisma.course.delete({
+                where: {
+                    id: input.id
+                },
+                include: {
+                    teacher: true,
+                    studentCourses: {
+                        include: {
+                            student: true
+                        }
+                    }
+                }
+            });
+
+            return {
+                id: deletedCourse.id,
+                deletedAt: new Date()
+            }
+        } catch (error) {
+            throw new CannotDeleteError();
         }
     }
 }
