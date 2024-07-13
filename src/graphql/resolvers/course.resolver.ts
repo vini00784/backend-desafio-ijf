@@ -16,6 +16,8 @@ import { AssignCourseToStudentInput } from "../input/course/assign-to-student.in
 import { AssignCourseToStudentResponse } from "../response/course/assign-to-student-response";
 import { Lesson } from "../entities/lesson";
 import { CannotCreateError } from "src/errors/cannot-create.error";
+import { RemoveStudentOfCourseResponse } from "../response/course/remove-student-response";
+import { RemoveStudentOfCourseInput } from "../input/course/remove-student.input";
 
 @Resolver()
 export class CourseResolver {
@@ -179,6 +181,39 @@ export class CourseResolver {
             }
         } catch (error) {
             throw new CannotCreateError();
+        }
+    }
+
+    @UseAuthGuard(["teacher"])
+    @Mutation(() => RemoveStudentOfCourseResponse)
+    async removeStudentOfCourse(
+        @Args("input", { type: () => RemoveStudentOfCourseInput })
+        input: RemoveStudentOfCourseInput
+    ): Promise<RemoveStudentOfCourseResponse> {
+        try {
+            if(!input.courseId || !input.studentId) throw new RequiredIdError();
+
+            const courseStudents = await prisma.studentCourse.findMany({
+                where: {
+                    courseId: input.courseId
+                }
+            });
+            
+            const studentCourseToRemove = courseStudents.find((studentCourse) =>
+                studentCourse.studentId === input.studentId
+            );
+
+            await prisma.studentCourse.delete({
+                where: {
+                    id: studentCourseToRemove.id
+                },
+            });
+
+            return {
+                message: "Student removed of course successfully!"
+            }
+        } catch (error) {
+            throw new CannotDeleteError();
         }
     }
 }
