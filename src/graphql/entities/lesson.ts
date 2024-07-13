@@ -12,7 +12,7 @@ export class Lesson extends BaseEntity {
     content: string;
 
     @Field(() => [StudentLesson])   
-    stundentLessons: StudentLesson[];
+    studentLessons: StudentLesson[];
 
     @Field(() => Course, { nullable: false })
     course: Course
