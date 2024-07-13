@@ -12,6 +12,10 @@ import { RequiredIdError } from "src/errors/required-id.error";
 import { DeleteCourseInput } from "../input/course/delete-course.input";
 import { DeleteCourseResponse } from "../response/course/delete-course-response";
 import { CannotDeleteError } from "src/errors/cannot-delete.error";
+import { AssignCourseToStudentInput } from "../input/course/assign-to-student.input";
+import { AssignCourseToStudentResponse } from "../response/course/assign-to-student-response";
+import { Lesson } from "../entities/lesson";
+import { CannotCreateError } from "src/errors/cannot-create.error";
 
 @Resolver()
 export class CourseResolver {
@@ -118,6 +122,63 @@ export class CourseResolver {
             }
         } catch (error) {
             throw new CannotDeleteError();
+        }
+    }
+
+    @UseAuthGuard(["teacher"])
+    @Mutation(() => AssignCourseToStudentResponse, { nullable: true })
+    async assignCourseToStudent(
+        @Args("input", { type: () => AssignCourseToStudentInput })
+        input: AssignCourseToStudentInput
+    ): Promise<AssignCourseToStudentResponse> {
+        try {
+            if(!input.courseId || !input.studentId) throw new RequiredIdError();
+
+            await prisma.course.update({
+                where: {
+                    id: input.courseId
+                },
+                data: {
+                    studentCourses: {
+                        create: {
+                            student: {
+                                connect: {
+                                    id: input.studentId
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            const lessons = await prisma.lesson.findMany({
+                where: {
+                    courseId: input.courseId
+                }
+            });
+
+            for(const lesson of lessons) {
+                await prisma.studentLesson.create({
+                    data: {
+                        student: {
+                            connect: {
+                                id: input.studentId
+                            }
+                        },
+                        lesson: {
+                            connect: {
+                                id: lesson.id
+                            }
+                        }
+                    }
+                });
+            };
+
+            return {
+                message: "Course assigned to student with success!"
+            }
+        } catch (error) {
+            throw new CannotCreateError();
         }
     }
 }
