@@ -4,8 +4,11 @@ import { CreateCourseInput } from "../input/course/create-course.input";
 import { UseAuthGuard } from "src/guards/auth.guard";
 import prisma from "src/database/prisma";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
-import { AlreadyExistsError } from "src/errors/already-exists";
+import { AlreadyExistsError } from "src/errors/already-exists.error";
 import { GqlContext } from "src/types/gql-context";
+import { UpdateCourseInput } from "../input/course/edit-course.input";
+import { UpdateCourseResponse } from "../response/course/update-course-response";
+import { RequiredIdError } from "src/errors/required-id.error";
 
 @Resolver()
 export class CourseResolver {
@@ -42,10 +45,44 @@ export class CourseResolver {
         } catch (error) {
             if (error instanceof PrismaClientKnownRequestError) {
                 if (error.code === "P2002") {
-                  throw new AlreadyExistsError();
+                    throw new AlreadyExistsError();
                 }
-              }
-              throw error;
+            }
+            throw error;
+        }
+    }
+
+    @UseAuthGuard(["teacher"])
+    @Mutation(() => UpdateCourseResponse, { nullable: false })
+    async updateCourse(
+        @Args("input", { type: () => UpdateCourseInput })
+        input: UpdateCourseInput
+    ): Promise<UpdateCourseResponse> {
+        try {
+            if(!input.id) throw new RequiredIdError();
+            
+            const updatedCourse = await prisma.course.update({
+                where: {
+                    id: input.id
+                },
+                data: {
+                    name: input.name,
+                    description: input.description,
+                    banner: input.banner
+                }
+            });
+
+            return {
+                id: updatedCourse.id,
+                updatedAt: new Date()
+            }
+        } catch (error) {
+            if (error instanceof PrismaClientKnownRequestError) {
+                if (error.code === "P2002") {
+                    throw new AlreadyExistsError();
+                }
+            }
+            throw error;
         }
     }
 }
