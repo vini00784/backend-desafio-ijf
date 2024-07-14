@@ -1,4 +1,4 @@
-import { Args, Context, Mutation, Resolver } from "@nestjs/graphql";
+import { Args, Context, Mutation, Query, Resolver } from "@nestjs/graphql";
 import { CreateCourseResponse } from "../response/course/create-course-response";
 import { CreateCourseInput } from "../input/course/create-course.input";
 import { UseAuthGuard } from "src/guards/auth.guard";
@@ -14,10 +14,10 @@ import { DeleteCourseResponse } from "../response/course/delete-course-response"
 import { CannotDeleteError } from "src/errors/cannot-delete.error";
 import { AssignCourseToStudentInput } from "../input/course/assign-to-student.input";
 import { AssignCourseToStudentResponse } from "../response/course/assign-to-student-response";
-import { Lesson } from "../entities/lesson";
 import { CannotCreateError } from "src/errors/cannot-create.error";
 import { RemoveStudentOfCourseResponse } from "../response/course/remove-student-response";
 import { RemoveStudentOfCourseInput } from "../input/course/remove-student.input";
+import { LoadCoursesResponse } from "../response/course/load-courses-response";
 
 @Resolver()
 export class CourseResolver {
@@ -68,7 +68,7 @@ export class CourseResolver {
         input: UpdateCourseInput
     ): Promise<UpdateCourseResponse> {
         try {
-            if(!input.id) throw new RequiredIdError();
+            if (!input.id) throw new RequiredIdError();
 
             const updatedCourse = await prisma.course.update({
                 where: {
@@ -102,7 +102,7 @@ export class CourseResolver {
         input: DeleteCourseInput
     ): Promise<DeleteCourseResponse> {
         try {
-            if(!input.id) throw new RequiredIdError();
+            if (!input.id) throw new RequiredIdError();
 
             const deletedCourse = await prisma.course.delete({
                 where: {
@@ -134,7 +134,7 @@ export class CourseResolver {
         input: AssignCourseToStudentInput
     ): Promise<AssignCourseToStudentResponse> {
         try {
-            if(!input.courseId || !input.studentId) throw new RequiredIdError();
+            if (!input.courseId || !input.studentId) throw new RequiredIdError();
 
             await prisma.course.update({
                 where: {
@@ -152,14 +152,14 @@ export class CourseResolver {
                     }
                 }
             });
-            
+
             const lessons = await prisma.lesson.findMany({
                 where: {
                     courseId: input.courseId
                 }
             });
 
-            for(const lesson of lessons) {
+            for (const lesson of lessons) {
                 await prisma.studentLesson.create({
                     data: {
                         student: {
@@ -191,14 +191,14 @@ export class CourseResolver {
         input: RemoveStudentOfCourseInput
     ): Promise<RemoveStudentOfCourseResponse> {
         try {
-            if(!input.courseId || !input.studentId) throw new RequiredIdError();
+            if (!input.courseId || !input.studentId) throw new RequiredIdError();
 
             const courseStudents = await prisma.studentCourse.findMany({
                 where: {
                     courseId: input.courseId
                 }
             });
-            
+
             const studentCourseToRemove = courseStudents.find((studentCourse) =>
                 studentCourse.studentId === input.studentId
             );
@@ -214,6 +214,80 @@ export class CourseResolver {
             }
         } catch (error) {
             throw new CannotDeleteError();
+        }
+    }
+
+    @UseAuthGuard()
+    @Query(() => [LoadCoursesResponse], { nullable: false })
+    async loadCourses(
+        @Context() context: GqlContext,
+    ): Promise<LoadCoursesResponse[]> {
+        try {
+            const user = context.user;
+
+            let courses: LoadCoursesResponse[];
+
+            if (user.role === "teacher") {
+                courses = await prisma.course.findMany({
+                    where: {
+                        teacherId: user.id
+                    },
+                    include: {
+                        studentCourses: {
+                            include: {
+                                student: {
+                                    include: {
+                                        studentLessons: {
+                                            select: {
+                                                id: true,
+                                                studentId: true,
+                                                lessonId: true,
+                                                isWatched: true
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        lessons: true,
+                        teacher: true
+                    }
+                });
+            } else if (user.role === "student") {
+                courses = await prisma.course.findMany({
+                    where: {
+                        studentCourses: {
+                            some: {
+                                studentId: user.id
+                            }
+                        }
+                    },
+                    include: {
+                        studentCourses: {
+                            where: {
+                                studentId: user.id
+                            },
+                            include: {
+                                student: {
+                                    include: {
+                                        studentLessons: {
+                                            where: {
+                                                studentId: user.id
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        lessons: true,
+                        teacher: true
+                    }
+                });
+            }
+
+            return courses;
+        } catch (error) {
+            throw new Error(error);
         }
     }
 }
