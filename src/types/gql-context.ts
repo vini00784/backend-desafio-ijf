@@ -5,5 +5,5 @@ import { UserRoleEnum } from "./user-role";
 export interface GqlContext {
     req: Request;
     res: Response;
-    user?: Omit<User, "password"> | null & { role: keyof typeof UserRoleEnum };
+    user?: Omit<User | null, "password"> & { role: keyof typeof UserRoleEnum };
 }
