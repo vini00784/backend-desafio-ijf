@@ -1,5 +1,5 @@
 export class CannotDeleteError extends Error {
-    constructor() {
-        super("Cannot delete!")
+    constructor(cause?: string) {
+        super(`Cannot delete${cause ? `, because ${cause}` : "."}`)
     }
 }
