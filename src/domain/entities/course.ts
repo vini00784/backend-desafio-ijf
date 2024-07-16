@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 import { BaseEntity } from "./base-entity";
-import { Teacher } from "src/graphql/entities/teacher";
+import { Teacher } from "./teacher";
 import { Student } from "./student";
 import { Lesson } from "./lesson";
 import { CannotDeleteError } from "src/errors/cannot-delete.error";
