@@ -49,7 +49,7 @@ export class Course extends BaseEntity<CourseProps> {
         this.props.students.splice(foundedStudent, 1);
     }
 
-    edit(data: Omit<CourseProps, "teacher">) {
+    edit(data: Partial<Omit<CourseProps, "teacher">>) {
         this.props = {
             ...this.props,
             ...data

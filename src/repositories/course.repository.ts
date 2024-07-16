@@ -6,13 +6,13 @@ export class CourseRepository extends Repository<Course, CourseProps> {
     store(course: Course): void {
         for(const dataItem of this.data) {
             if(dataItem.props.name === course.props.name)
-                throw AlreadyExistsError;
+                throw new AlreadyExistsError();
         }
 
         this.data.push(course);
     }
 
-    update(id: string, props: Omit<CourseProps, "teacher">): Course {
+    update(id: string, props: Partial<Omit<CourseProps, "teacher">>): Course {
         const foundedItem = this.findItemById(id);
 
         this.data[foundedItem].edit(props);
