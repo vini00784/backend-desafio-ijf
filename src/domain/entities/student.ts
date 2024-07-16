@@ -107,10 +107,12 @@ export class Student extends BaseEntity<PropsToEntity> {
     
 
     #checkCourseStatus(studentLessonId: StudentLesson["id"]) {
-        const foundedCourse = this.props.studentCourses.findIndex(course => {
-            course.props.course.props.lessons.find(lesson => lesson.id === studentLessonId) !== undefined;
-        });
-
+        const foundedCourse = this.props.studentCourses.findIndex(
+            (course) => !!course.props.course.props.lessons.find(
+                (lesson) => lesson.id === studentLessonId,
+            ),
+        );
+      
         this.props.studentCourses[foundedCourse].checkStatus();
     }
 }
