@@ -1,33 +1,32 @@
-import { Field, ID, ObjectType } from "@nestjs/graphql";
-import { StudentLesson } from "@prisma/client";
-import { Course } from "src/graphql/entities/course";
-import { Lesson } from "src/graphql/entities/lesson";
-import { Student } from "src/graphql/entities/student";
-import { Teacher } from "src/graphql/entities/teacher";
+import { Field, ID, ObjectType } from '@nestjs/graphql';
+import { StudentLesson } from '@prisma/client';
+import { Course } from 'src/graphql/entities/course';
+import { Lesson } from 'src/graphql/entities/lesson';
+import { Student } from 'src/graphql/entities/student';
+import { Teacher } from 'src/graphql/entities/teacher';
 
 @ObjectType()
 class LoadTeacherOfCourse {
   @Field(() => ID, { nullable: false })
-  id?: Teacher["id"];
+  id?: Teacher['id'];
 
   @Field(() => String, { nullable: false })
   username?: string;
 
   @Field(() => String, { nullable: false })
   name?: string;
-
 }
 
 @ObjectType()
 class LoadStudentLessonsByCourse {
   @Field(() => ID, { nullable: false })
-  id?: StudentLesson["id"];
+  id?: StudentLesson['id'];
 
   @Field(() => ID, { nullable: false })
-  lessonId?: Lesson["id"];
+  lessonId?: Lesson['id'];
 
   @Field(() => ID, { nullable: false })
-  studentId?: Student["id"];
+  studentId?: Student['id'];
 
   @Field(() => Boolean, { nullable: false })
   isWatched?: boolean;
@@ -36,7 +35,7 @@ class LoadStudentLessonsByCourse {
 @ObjectType()
 class LoadStudentsOfCourse {
   @Field(() => ID, { nullable: false })
-  id?: Student["id"];
+  id?: Student['id'];
 
   @Field(() => String, { nullable: false })
   username?: string;
@@ -54,7 +53,7 @@ class LoadStudentCoursesByCourses {
   student?: LoadStudentsOfCourse;
 
   @Field(() => ID, { nullable: false })
-  courseId?: Course["id"];
+  courseId?: Course['id'];
 
   @Field(() => String, { nullable: false })
   status?: string;
@@ -63,7 +62,7 @@ class LoadStudentCoursesByCourses {
 @ObjectType()
 export class LoadCoursesResponse {
   @Field(() => ID, { nullable: false })
-  id: Course["id"];
+  id: Course['id'];
 
   @Field(() => String, { nullable: false })
   name?: string;

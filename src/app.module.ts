@@ -2,8 +2,8 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { GraphQLModule } from '@nestjs/graphql';
-import * as path from "node:path";
-import * as Resolvers from "./graphql/resolvers";
+import * as path from 'node:path';
+import * as Resolvers from './graphql/resolvers';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtMiddleware } from './middleware/jwt';
 
@@ -14,24 +14,23 @@ import { JwtMiddleware } from './middleware/jwt';
       playground: true,
       introspection: true,
       driver: ApolloDriver,
-      autoSchemaFile: path.join(process.cwd(), "dist", "schema.gql")
+      autoSchemaFile: path.join(process.cwd(), 'dist', 'schema.gql'),
     }),
     ConfigModule.forRoot({
-      isGlobal: true
+      isGlobal: true,
     }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),
-        signOptions: { expiresIn: +configService.get<string>('JWT_EXPIRATION_TIME') },
+        signOptions: {
+          expiresIn: +configService.get<string>('JWT_EXPIRATION_TIME'),
+        },
       }),
-      inject: [ConfigService]
-    })
+      inject: [ConfigService],
+    }),
   ],
   controllers: [],
-  providers: [
-    ...Object.values(Resolvers),
-    JwtMiddleware
-  ]
+  providers: [...Object.values(Resolvers), JwtMiddleware],
 })
-export class AppModule { }
+export class AppModule {}
