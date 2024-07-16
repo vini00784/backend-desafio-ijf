@@ -9,15 +9,18 @@ export interface StudentProps {
     name: string;
     username: string;
     password: string;
-    studentCourses: StudentCourse[];
-    studentLessons: StudentLesson[];
 }
 
 interface PropsToConstructor extends StudentProps {
     courses?: Course[];
 }
 
-export class Student extends BaseEntity<StudentProps> {
+interface PropsToEntity extends StudentProps {
+    studentCourses: StudentCourse[];
+    studentLessons: StudentLesson[];
+}
+
+export class Student extends BaseEntity<PropsToEntity> {
     constructor(props: PropsToConstructor) {
         super(randomUUID(), {
             ...props,
@@ -28,7 +31,7 @@ export class Student extends BaseEntity<StudentProps> {
         this.#fetchStudentCourseLessons(props.courses);
     }
 
-    edit(props: Omit<StudentProps, "lessons" | "courses">) {
+    edit(props: Partial<Omit<StudentProps, "lessons" | "courses">>) {
         this.props = { ...this.props, ...props };
     }
 

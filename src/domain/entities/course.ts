@@ -37,7 +37,7 @@ export class Course extends BaseEntity<CourseProps> {
     }
 
     addStudent(student: Student) {
-        if(this.props.students.findIndex(studentItem => studentItem.props.username === student.props.username))
+        if(this.props.students.findIndex(studentItem => studentItem.props.username === student.props.username) !== -1)
             throw new AlreadyExistsError();
 
         this.props.students.push(student);
