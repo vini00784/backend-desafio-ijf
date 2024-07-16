@@ -6,7 +6,7 @@ import { Lesson } from "./lesson";
 import { CannotDeleteError } from "src/errors/cannot-delete.error";
 import { AlreadyExistsError } from "src/errors/already-exists.error";
 
-interface CourseProps {
+export interface CourseProps {
     name: string;
     description: string;
     banner: string;

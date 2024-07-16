@@ -5,7 +5,7 @@ import { StudentLesson } from "./studentLesson";
 import { Course } from "./course";
 import { Lesson } from "./lesson";
 
-interface StudentProps {
+export interface StudentProps {
     name: string;
     username: string;
     password: string;
